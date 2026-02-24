@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML → XLSX (1С)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; background: #f5f5f5; }
+    h1 { margin: 0 0 12px; font-size: 18px; }
+    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+    button { padding: 8px 14px; cursor: pointer; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+    button:hover { background: #eee; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .progress-wrap { flex: 1; min-width: 120px; }
+    progress { width: 100%; height: 8px; }
+    .table-wrap { background: #fff; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; margin-bottom: 8px; max-height: 280px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 12px; }
+    th { background: #f0f0f0; }
+    .log-wrap { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 8px; font-family: Consolas, monospace; font-size: 12px; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>HTML → XLSX (1С)</h1>
+  <div class="toolbar">
+    <button id="btnChoose">Выбрать HTML…</button>
+    <button id="btnSave" disabled>Сохранить результаты…</button>
+    <div class="progress-wrap"><progress id="progress" value="0" max="100"></progress></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Файл</th><th>Путь</th><th>Статус</th></tr></thead>
+      <tbody id="fileList"></tbody>
+    </table>
+  </div>
+  <div class="log-wrap" id="log"></div>
+
+  <script>
+    const btnChoose = document.getElementById('btnChoose');
+    const btnSave = document.getElementById('btnSave');
+    const progress = document.getElementById('progress');
+    const fileList = document.getElementById('fileList');
+    const logEl = document.getElementById('log');
+
+    let lastResult = null;
+
+    function log(line) {
+      logEl.textContent += line + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    window.api.onLog(log);
+    window.api.onProgress(({ done, total }) => {
+      progress.value = total ? (done / total) * 100 : 0;
+    });
+
+    btnChoose.addEventListener('click', async () => {
+      const paths = await window.api.chooseHtmlFiles();
+      if (!paths || paths.length === 0) return;
+      fileList.innerHTML = '';
+      paths.forEach((p) => {
+        const name = p.split(/[/\\]/).pop();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${escapeHtml(p)}</td><td>В очереди</td>`;
+        fileList.appendChild(tr);
+      });
+      progress.value = 0;
+      logEl.textContent = '';
+      btnChoose.disabled = true;
+      btnSave.disabled = true;
+      const rows = fileList.querySelectorAll('tbody tr');
+      try {
+        lastResult = await window.api.convert(paths);
+        lastResult.results.forEach((r, i) => {
+          if (rows[i]) rows[i].cells[2].textContent = r.ok ? 'Готово' : 'Ошибка';
+        });
+        log('Конвертация завершена.');
+        const saveDir = await window.api.chooseSaveDir();
+        if (saveDir) {
+          await window.api.saveResults(lastResult.results, saveDir);
+          log('Результаты сохранены в выбранную папку.');
+          btnSave.disabled = true;
+        } else {
+          log('Папка не выбрана. Результаты во временной папке.');
+          btnSave.disabled = false;
+        }
+      } catch (e) {
+        log('Ошибка: ' + e.message);
+        btnSave.disabled = false;
+      }
+      btnChoose.disabled = false;
+    });
+
+    btnSave.addEventListener('click', async () => {
+      if (!lastResult) return;
+      const saveDir = await window.api.chooseSaveDir();
+      if (!saveDir) return;
+      await window.api.saveResults(lastResult.results, saveDir);
+      log('Результаты сохранены.');
+      btnSave.disabled = true;
+    });
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

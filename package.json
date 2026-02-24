@@ -1,0 +1,43 @@
+{
+  "name": "1c-html-to-xlsx",
+  "version": "0.2.0",
+  "description": "Конвертер HTML (экспорт 1С) в XLSX с сохранением форматирования",
+  "main": "src/main/main.js",
+  "author": "v99k",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --publish never",
+    "build:win": "electron-builder --win portable --x64 --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "node-html-parser": "^6.1.13"
+  },
+  "devDependencies": {
+    "electron": "28.3.3",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.efko.html2xlsx",
+    "productName": "HTML to XLSX",
+    "directories": { "output": "dist" },
+    "files": ["src/**/*", "ТЗ.html", "Тест макета.html"],
+    "win": {
+      "target": ["portable"],
+      "artifactName": "${productName}-${version}-win-x64-portable.${ext}",
+      "icon": null
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage"]
+    },
+    "electronVersion": "28.3.3"
+  }
+}
