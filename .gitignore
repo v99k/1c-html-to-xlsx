@@ -1,0 +1,53 @@
+# --- Build artefacts ---
+build/
+dist/
+node_modules/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+Makefile
+*.ninja
+.ninja_*
+_deps/
+
+# --- App outputs / temporary results ---
+out/
+*.log
+*.tmp
+
+# --- Packaging artefacts ---
+*.dmg
+*.app
+*.AppImage
+*.msi
+*.exe
+*.zip
+*.tar.gz
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+
+# --- IDE / editor ---
+.vscode/
+.idea/
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+*.code-workspace
+
+# Qt Creator
+*.pro.user*
+*.qmlc
+*.jsc
+
+# --- Cursor ---
+.cursor/
+
+# --- macOS crash reports / debug ---
+*.dSYM/
+
